@@ -1,0 +1,471 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Tenant {
+  id        String         @id @default(cuid())
+  name      String
+  subdomain String         @unique
+  email     String         @unique
+  phone     String?
+  address   String?
+  city      String?
+  state     String?
+  zipCode   String?
+  country   String?        @default("USA")
+  status    BusinessStatus @default(ACTIVE)
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+
+  // Relations
+  users         User[]
+  children      Child[]
+  services      Service[]
+  documentTypes DocumentType[]
+  notifications Notification[]
+  settings      TenantSettings?
+  Classroom     Classroom[]
+
+  @@map("tenants")
+}
+
+model TenantSettings {
+  id        String   @id @default(cuid())
+  tenantId  String   @unique
+  settings  Json // For storing business-specific settings
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@map("tenant_settings")
+}
+
+enum BusinessStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
+model User {
+  id                 String    @id @default(cuid())
+  email              String    @unique
+  password           String
+  firstName          String
+  lastName           String
+  phone              String?
+  role               UserRole
+  tenantId           String?
+  isActive           Boolean   @default(true)
+  emailVerified      Boolean   @default(false)
+  emailNotifications Boolean   @default(true)
+  smsNotifications   Boolean   @default(false)
+  lastLoginAt        DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+
+  // Relations
+  tenant                     Tenant?                      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  parentRelations            ParentChildRelation[]
+  assignedServices           ServiceAssignment[]
+  notifications              Notification[]
+  documents                  Document[]                   @relation("DocumentReviewer")
+  Document                   Document[]
+  RefreshToken               RefreshToken[]
+  TeacherClassroomAssignment TeacherClassroomAssignment[]
+  AttendanceRecord           AttendanceRecord[]
+
+  @@map("users")
+}
+
+enum UserRole {
+  SUPER_ADMIN
+  BUSINESS_ADMIN
+  EDUCATOR
+  PARENT
+}
+
+model Child {
+  id          String   @id @default(cuid())
+  firstName   String
+  lastName    String
+  dateOfBirth DateTime
+  tenantId    String
+  notes       String?
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  tenant              Tenant                @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  parentRelations     ParentChildRelation[]
+  serviceEnrollments  ServiceEnrollment[]
+  documents           Document[]
+  waitlistEntries     WaitlistEntry[]
+  EmergencyContact    EmergencyContact[]
+  MedicalInformation  MedicalInformation?
+  ImmunizationRecord  ImmunizationRecord[]
+  ClassroomAssignment ClassroomAssignment[]
+
+  @@map("children")
+}
+
+model ParentChildRelation {
+  id               String           @id @default(cuid())
+  parentId         String
+  childId          String
+  relationshipType RelationshipType
+  isPrimaryContact Boolean          @default(false)
+  createdAt        DateTime         @default(now())
+
+  // Relations
+  parent User  @relation(fields: [parentId], references: [id], onDelete: Cascade)
+  child  Child @relation(fields: [childId], references: [id], onDelete: Cascade)
+
+  @@unique([parentId, childId])
+  @@map("parent_child_relations")
+}
+
+enum RelationshipType {
+  FATHER
+  MOTHER
+  GUARDIAN
+  EMERGENCY_CONTACT
+}
+
+model Service {
+  id           String   @id @default(cuid())
+  name         String
+  description  String?
+  tenantId     String
+  minAgeMonths Int
+  maxAgeMonths Int
+  capacity     Int
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // Relations
+  tenant          Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  schedules       ServiceSchedule[]
+  assignments     ServiceAssignment[]
+  enrollments     ServiceEnrollment[]
+  waitlistEntries WaitlistEntry[]
+
+  @@map("services")
+}
+
+model ServiceSchedule {
+  id        String @id @default(cuid())
+  serviceId String
+  dayOfWeek Int // 0-6 (Sunday-Saturday)
+  startTime String // HH:mm format
+  endTime   String // HH:mm format
+
+  // Relations
+  service Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  @@map("service_schedules")
+}
+
+model ServiceAssignment {
+  id         String   @id @default(cuid())
+  educatorId String
+  serviceId  String
+  assignedAt DateTime @default(now())
+
+  // Relations
+  educator User    @relation(fields: [educatorId], references: [id], onDelete: Cascade)
+  service  Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  @@unique([educatorId, serviceId])
+  @@map("service_assignments")
+}
+
+model ServiceEnrollment {
+  id          String           @id @default(cuid())
+  childId     String
+  serviceId   String
+  status      EnrollmentStatus @default(ACTIVE)
+  enrolledAt  DateTime         @default(now())
+  graduatedAt DateTime?
+
+  // Relations
+  child   Child   @relation(fields: [childId], references: [id], onDelete: Cascade)
+  service Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  @@unique([childId, serviceId])
+  @@map("service_enrollments")
+}
+
+enum EnrollmentStatus {
+  ACTIVE
+  INACTIVE
+  GRADUATED
+}
+
+model WaitlistEntry {
+  id         String         @id @default(cuid())
+  childId    String
+  serviceId  String
+  status     WaitlistStatus @default(PENDING)
+  appliedAt  DateTime       @default(now())
+  reviewedAt DateTime?
+  reviewedBy String?
+  notes      String?
+
+  // Relations
+  child   Child   @relation(fields: [childId], references: [id], onDelete: Cascade)
+  service Service @relation(fields: [serviceId], references: [id], onDelete: Cascade)
+
+  @@unique([childId, serviceId])
+  @@map("waitlist_entries")
+}
+
+enum WaitlistStatus {
+  PENDING
+  APPROVED
+  DECLINED
+  ENROLLED
+}
+
+model DocumentType {
+  id             String   @id @default(cuid())
+  name           String
+  description    String?
+  tenantId       String
+  isRequired     Boolean  @default(true)
+  allowedFormats String // JSON array of allowed formats
+  maxSizeMB      Int      @default(10)
+  expiryRequired Boolean  @default(false)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  // Relations
+  tenant    Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  documents Document[]
+
+  @@map("document_types")
+}
+
+model Document {
+  id             String         @id @default(cuid())
+  childId        String
+  documentTypeId String
+  fileName       String
+  filePath       String
+  fileSize       Int
+  mimeType       String
+  status         DocumentStatus @default(PENDING)
+  uploadedAt     DateTime       @default(now())
+  reviewedAt     DateTime?
+  reviewedBy     String?
+  expiryDate     DateTime?
+  notes          String?
+
+  // Relations
+  child          Child        @relation(fields: [childId], references: [id], onDelete: Cascade)
+  documentType   DocumentType @relation(fields: [documentTypeId], references: [id], onDelete: Cascade)
+  uploadedBy     User         @relation(fields: [uploadedById], references: [id])
+  reviewedByUser User?        @relation("DocumentReviewer", fields: [reviewedBy], references: [id])
+  uploadedById   String
+
+  @@map("documents")
+}
+
+enum DocumentStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  tenantId  String
+  type      NotificationType
+  title     String
+  message   String
+  isRead    Boolean          @default(false)
+  sentVia   String // JSON array of channels used
+  createdAt DateTime         @default(now())
+  readAt    DateTime?
+
+  // Relations
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
+}
+
+enum NotificationType {
+  WAITLIST_APPROVED
+  WAITLIST_DECLINED
+  DOCUMENT_REQUESTED
+  DOCUMENT_APPROVED
+  DOCUMENT_REJECTED
+  SCHEDULE_CHANGED
+  GENERAL_ANNOUNCEMENT
+  ENROLLMENT_CONFIRMED
+}
+
+model RefreshToken {
+  id        String    @id @default(cuid())
+  token     String    @unique
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime  @default(now())
+  revokedAt DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("refresh_tokens")
+}
+
+model EmergencyContact {
+  id               String   @id @default(cuid())
+  childId          String
+  firstName        String
+  lastName         String
+  phone            String
+  relationshipType String // e.g., Grandparent, Aunt, Uncle
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  child Child @relation(fields: [childId], references: [id], onDelete: Cascade)
+
+  @@map("emergency_contacts")
+}
+
+model MedicalInformation {
+  id             String   @id @default(cuid())
+  childId        String   @unique
+  allergies      String? // Could be a JSON or structured text
+  medications    String? // Could be a JSON or structured text
+  conditions     String? // Could be a JSON or structured text
+  physicianName  String?
+  physicianPhone String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  child Child @relation(fields: [childId], references: [id], onDelete: Cascade)
+
+  @@map("medical_information")
+}
+
+model ImmunizationRecord {
+  id             String   @id @default(cuid())
+  childId        String
+  immunization   String // Name of the vaccine
+  dateReceived   DateTime
+  administeredBy String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  child Child @relation(fields: [childId], references: [id], onDelete: Cascade)
+
+  @@map("immunization_records")
+}
+
+model Classroom {
+  id           String   @id @default(cuid())
+  name         String
+  tenantId     String
+  capacity     Int
+  minAgeMonths Int?
+  maxAgeMonths Int?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  tenant    Tenant                       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  children  ClassroomAssignment[]
+  teachers  TeacherClassroomAssignment[]
+  schedules Schedule[]
+
+  @@map("classrooms")
+}
+
+model ClassroomAssignment {
+  id          String   @id @default(cuid())
+  childId     String
+  classroomId String
+  assignedAt  DateTime @default(now())
+
+  child     Child     @relation(fields: [childId], references: [id], onDelete: Cascade)
+  classroom Classroom @relation(fields: [classroomId], references: [id], onDelete: Cascade)
+
+  @@unique([childId, classroomId])
+  @@map("classroom_assignments")
+}
+
+model TeacherClassroomAssignment {
+  id          String   @id @default(cuid())
+  teacherId   String
+  classroomId String
+  assignedAt  DateTime @default(now())
+
+  teacher   User      @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  classroom Classroom @relation(fields: [classroomId], references: [id], onDelete: Cascade)
+
+  @@unique([teacherId, classroomId])
+  @@map("teacher_classroom_assignments")
+}
+
+model AttendanceRecord {
+  id         String           @id @default(cuid())
+  childId    String
+  checkIn    DateTime
+  checkOut   DateTime?
+  notes      String?
+  date       DateTime         @db.Date
+  status     AttendanceStatus
+  recordedBy String // User ID of the teacher/staff who recorded it
+
+  child User @relation(fields: [recordedBy], references: [id])
+
+  @@map("attendance_records")
+}
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  SICK
+  HOLIDAY
+}
+
+model Schedule {
+  id          String   @id @default(cuid())
+  classroomId String
+  title       String
+  description String?
+  startTime   DateTime
+  endTime     DateTime
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  classroom  Classroom  @relation(fields: [classroomId], references: [id], onDelete: Cascade)
+  activities Activity[]
+
+  @@map("schedules")
+}
+
+model Activity {
+  id          String   @id @default(cuid())
+  scheduleId  String
+  title       String
+  description String?
+  startTime   DateTime
+  endTime     DateTime
+
+  schedule Schedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
+
+  @@map("activities")
+}
