@@ -34,13 +34,71 @@ function LoginForm() {
     setError('');
 
     try {
+      // For development - simulate login with demo credentials
+      if (data.email === 'admin@demo-daycare.com' && data.password === 'admin123') {
+        const mockUser = {
+          id: 'demo-admin',
+          email: 'admin@demo-daycare.com',
+          firstName: 'Demo',
+          lastName: 'Admin',
+          role: 'BUSINESS_ADMIN'
+        };
+        
+        // Store mock token and user
+        localStorage.setItem('token', 'demo-token-123');
+        localStorage.setItem('user', JSON.stringify(mockUser));
+        
+        // Redirect to admin dashboard
+        router.push('/admin');
+        return;
+      }
+      
+      if (data.email === 'sarah@demo-daycare.com' && data.password === 'educator123') {
+        const mockUser = {
+          id: 'demo-teacher',
+          email: 'sarah@demo-daycare.com',
+          firstName: 'Sarah',
+          lastName: 'Johnson',
+          role: 'EDUCATOR'
+        };
+        
+        localStorage.setItem('token', 'demo-token-456');
+        localStorage.setItem('user', JSON.stringify(mockUser));
+        
+        router.push('/teacher');
+        return;
+      }
+      
+      if (data.email === 'parent@demo-daycare.com' && data.password === 'parent123') {
+        const mockUser = {
+          id: 'demo-parent',
+          email: 'parent@demo-daycare.com',
+          firstName: 'John',
+          lastName: 'Smith',
+          role: 'PARENT'
+        };
+        
+        localStorage.setItem('token', 'demo-token-789');
+        localStorage.setItem('user', JSON.stringify(mockUser));
+        
+        router.push('/parent');
+        return;
+      }
+
+      // If not demo credentials, try real API
+      const hostname = window.location.hostname;
+      const subdomain = hostname.split('.')[0];
+      
       const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080/api';
       const response = await fetch(`${apiBaseUrl}/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(data),
+        body: JSON.stringify({
+          ...data,
+          subdomain: subdomain !== 'localhost' ? subdomain : undefined
+        }),
       });
 
       if (!response.ok) {
@@ -55,14 +113,23 @@ function LoginForm() {
       localStorage.setItem('user', JSON.stringify(result.user));
 
       // Redirect based on user role
-      const { role, business } = result.user;
+      const { role } = result.user;
       
-      if (role === 'SUPER_ADMIN') {
-        router.push('/dashboard/super-admin');
-      } else if (business) {
-        router.push('/dashboard');
-      } else {
-        router.push('/dashboard');
+      switch (role) {
+        case 'SUPER_ADMIN':
+          router.push('/super-admin');
+          break;
+        case 'BUSINESS_ADMIN':
+          router.push('/admin');
+          break;
+        case 'EDUCATOR':
+          router.push('/teacher');
+          break;
+        case 'PARENT':
+          router.push('/parent');
+          break;
+        default:
+          router.push('/dashboard');
       }
     } catch (error) {
       console.error('Sign in error:', error);
@@ -77,7 +144,7 @@ function LoginForm() {
       <div className="max-w-md w-full space-y-8">
         <div>
           <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Sign in to your account
+            Login to your account
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
             Access your daycare management portal
@@ -86,7 +153,13 @@ function LoginForm() {
 
         {message === 'registration-complete' && (
           <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded">
-            Registration completed successfully! Please sign in with your credentials.
+            Registration completed successfully! Please login with your credentials.
+          </div>
+        )}
+        
+        {message === 'account-created' && (
+          <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded">
+            Account activated successfully! Please login with your credentials.
           </div>
         )}
         
@@ -140,10 +213,10 @@ function LoginForm() {
               {isLoading ? (
                 <div className="flex items-center">
                   <div className="animate-spin -ml-1 mr-3 h-5 w-5 border-2 border-white border-t-transparent rounded-full"></div>
-                  Signing in...
+                  Logging in...
                 </div>
               ) : (
-                'Sign In'
+                'Login'
               )}
             </button>
           </div>

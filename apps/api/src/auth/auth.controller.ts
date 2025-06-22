@@ -1,8 +1,9 @@
-import { Controller, Post, Body, ValidationPipe, Get, UseGuards, Request, Query } from '@nestjs/common';
+import { Controller, Post, Body, ValidationPipe, Get, UseGuards, Request, Query, Param, Delete } from '@nestjs/common';
 import { AuthService, LoginDto, RegisterDto } from './auth.service';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { TenantService } from './tenant.service';
 import { TenantRegistrationDto } from './tenant-registration.dto';
+import { InviteStaffDto, AcceptInvitationDto, ResendInvitationDto } from './staff-invitation.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -77,5 +78,35 @@ export class AuthController {
         subdomain: (user as any).tenant.subdomain,
       } : null,
     };
+  }
+
+  // Staff invitation endpoints
+  @UseGuards(JwtAuthGuard)
+  @Post('invite-staff')
+  async inviteStaff(@Request() req, @Body(ValidationPipe) inviteStaffDto: InviteStaffDto) {
+    return this.authService.inviteStaff(inviteStaffDto, req.user.userId, req.user.tenantId);
+  }
+
+  @Post('accept-invitation')
+  async acceptInvitation(@Body(ValidationPipe) acceptInvitationDto: AcceptInvitationDto) {
+    return this.authService.acceptInvitation(acceptInvitationDto);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post('resend-invitation')
+  async resendInvitation(@Request() req, @Body(ValidationPipe) resendInvitationDto: ResendInvitationDto) {
+    return this.authService.resendStaffInvitation(resendInvitationDto.userId, req.user.userId);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('invited-users')
+  async getInvitedUsers(@Request() req) {
+    return this.authService.getInvitedUsers(req.user.tenantId);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Delete('cancel-invitation/:userId')
+  async cancelInvitation(@Request() req, @Param('userId') userId: string) {
+    return this.authService.cancelInvitation(userId, req.user.userId);
   }
 }

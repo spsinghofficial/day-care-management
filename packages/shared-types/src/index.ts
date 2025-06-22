@@ -37,10 +37,10 @@ export interface Address {
 
 // User Types
 export enum UserRole {
-  SUPER_ADMIN = 'super_admin',
-  DAYCARE_ADMIN = 'daycare_admin',
-  EDUCATOR = 'educator',
-  PARENT = 'parent'
+  SUPER_ADMIN = 'SUPER_ADMIN',
+  BUSINESS_ADMIN = 'BUSINESS_ADMIN',
+  EDUCATOR = 'EDUCATOR',
+  PARENT = 'PARENT'
 }
 
 export interface User {
@@ -271,4 +271,33 @@ export interface ChildRegistrationData {
   dateOfBirth: Date;
   relationshipType: RelationshipType;
   isPrimaryContact: boolean;
+}
+
+// Staff Invitation Types
+export interface StaffInvitation {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  phone?: string;
+  role: UserRole;
+  tenantId: string;
+  isInvited: boolean;
+  invitedAt: Date;
+  invitationExpiresAt: Date;
+  invitedBy: string;
+}
+
+export interface InviteStaffRequest {
+  email: string;
+  firstName: string;
+  lastName: string;
+  phone?: string;
+  role: UserRole;
+  classroomIds?: string[];
+}
+
+export interface AcceptInvitationRequest {
+  token: string;
+  password: string;
 }

@@ -29,7 +29,7 @@ export class EmailService {
     }
 
     if (emailProvider === 'gmail') {
-      this.transporter = nodemailer.createTransporter({
+      this.transporter = nodemailer.createTransport({
         service: 'gmail',
         auth: {
           user: emailUser,
@@ -38,7 +38,7 @@ export class EmailService {
       });
     } else if (emailProvider === 'smtp') {
       // Generic SMTP configuration for other providers
-      this.transporter = nodemailer.createTransporter({
+      this.transporter = nodemailer.createTransport({
         host: this.configService.get<string>('SMTP_HOST'),
         port: parseInt(this.configService.get<string>('SMTP_PORT') || '587'),
         secure: this.configService.get<string>('SMTP_SECURE') === 'true',
@@ -167,6 +167,76 @@ export class EmailService {
         This reset link will expire in 1 hour.
         
         If you didn't request this password reset, you can safely ignore this email.
+      `
+    };
+
+    return this.sendEmail(template);
+  }
+
+  async sendStaffInvitationEmail(
+    email: string, 
+    firstName: string, 
+    invitationToken: string, 
+    baseUrl: string,
+    inviterName: string,
+    daycareOrganization: string
+  ): Promise<boolean> {
+    const invitationUrl = `${baseUrl}/accept-invitation?token=${invitationToken}`;
+    
+    const template: EmailTemplate = {
+      to: email,
+      subject: `You're invited to join ${daycareOrganization} - Daycare Manager`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h2>You're Invited to Join ${daycareOrganization}!</h2>
+          <p>Hello ${firstName},</p>
+          <p>${inviterName} has invited you to join ${daycareOrganization} using Daycare Manager.</p>
+          
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${invitationUrl}" 
+               style="background-color: #10B981; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
+              Accept Invitation
+            </a>
+          </div>
+          
+          <p>By accepting this invitation, you'll be able to:</p>
+          <ul>
+            <li>Access your daycare management dashboard</li>
+            <li>Manage children and attendance</li>
+            <li>Communicate with parents</li>
+            <li>Create daily reports</li>
+          </ul>
+          
+          <p>If the button doesn't work, you can copy and paste this link into your browser:</p>
+          <p style="word-break: break-all; color: #666;">${invitationUrl}</p>
+          
+          <p><strong>Important:</strong> This invitation will expire in 72 hours. Please accept it soon to start using your account.</p>
+          
+          <hr style="margin: 30px 0; border: none; border-top: 1px solid #eee;">
+          <p style="color: #888; font-size: 12px;">
+            If you weren't expecting this invitation, you can safely ignore this email.
+          </p>
+        </div>
+      `,
+      text: `
+        You're Invited to Join ${daycareOrganization}!
+        
+        Hello ${firstName},
+        
+        ${inviterName} has invited you to join ${daycareOrganization} using Daycare Manager.
+        
+        To accept this invitation and set up your account, visit:
+        ${invitationUrl}
+        
+        By accepting this invitation, you'll be able to:
+        - Access your daycare management dashboard
+        - Manage children and attendance
+        - Communicate with parents
+        - Create daily reports
+        
+        Important: This invitation will expire in 72 hours.
+        
+        If you weren't expecting this invitation, you can safely ignore this email.
       `
     };
 

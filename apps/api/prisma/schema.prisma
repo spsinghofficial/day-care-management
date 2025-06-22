@@ -56,21 +56,33 @@ enum BusinessStatus {
 }
 
 model User {
-  id                 String    @id @default(cuid())
-  email              String    @unique
-  password           String
-  firstName          String
-  lastName           String
-  phone              String?
-  role               UserRole
-  tenantId           String?
-  isActive           Boolean   @default(true)
-  emailVerified      Boolean   @default(false)
-  emailNotifications Boolean   @default(true)
-  smsNotifications   Boolean   @default(false)
-  lastLoginAt        DateTime?
-  createdAt          DateTime  @default(now())
-  updatedAt          DateTime  @updatedAt
+  id                         String    @id @default(cuid())
+  email                      String    @unique
+  password                   String?   // Allow null for invited users who haven't set password yet
+  firstName                  String
+  lastName                   String
+  phone                      String?
+  role                       UserRole
+  tenantId                   String?
+  isActive                   Boolean   @default(true)
+  emailVerified              Boolean   @default(false)
+  emailNotifications         Boolean   @default(true)
+  smsNotifications           Boolean   @default(false)
+  lastLoginAt                DateTime?
+  
+  // Invitation fields
+  invitationToken            String?   @unique
+  invitationExpiresAt        DateTime?
+  invitedBy                  String?   // User ID of who sent the invitation
+  invitedAt                  DateTime?
+  isInvited                  Boolean   @default(false)
+  
+  // Email verification fields (existing)
+  emailVerificationToken     String?   @unique
+  emailVerificationExpiry    DateTime?
+  
+  createdAt                  DateTime  @default(now())
+  updatedAt                  DateTime  @updatedAt
 
   // Relations
   tenant                     Tenant?                      @relation(fields: [tenantId], references: [id], onDelete: Cascade)

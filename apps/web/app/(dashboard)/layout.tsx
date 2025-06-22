@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 
 interface User {
@@ -9,7 +9,7 @@ interface User {
   email: string;
   firstName: string;
   lastName: string;
-  role: 'SUPER_ADMIN' | 'DAYCARE_ADMIN' | 'TEACHER' | 'STAFF' | 'PARENT';
+  role: 'SUPER_ADMIN' | 'BUSINESS_ADMIN' | 'EDUCATOR' | 'PARENT';
 }
 
 export default function DashboardLayout({
@@ -18,6 +18,7 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
+  const pathname = usePathname();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -33,6 +34,33 @@ export default function DashboardLayout({
     try {
       const userData = JSON.parse(userStr);
       setUser(userData);
+      
+      // Role-based route protection
+      const currentPath = pathname;
+      
+      // Redirect users to their appropriate dashboard if they're on wrong routes
+      if (userData.role === 'EDUCATOR') {
+        if (currentPath.startsWith('/admin/') || currentPath.startsWith('/super-admin/') || currentPath.startsWith('/parent/')) {
+          router.push('/teacher');
+          return;
+        }
+      } else if (userData.role === 'BUSINESS_ADMIN') {
+        if (currentPath.startsWith('/teacher/') || currentPath.startsWith('/super-admin/') || currentPath.startsWith('/parent/')) {
+          router.push('/admin');
+          return;
+        }
+      } else if (userData.role === 'PARENT') {
+        if (currentPath.startsWith('/admin/') || currentPath.startsWith('/teacher/') || currentPath.startsWith('/super-admin/')) {
+          router.push('/parent');
+          return;
+        }
+      } else if (userData.role === 'SUPER_ADMIN') {
+        if (currentPath.startsWith('/admin/') || currentPath.startsWith('/teacher/') || currentPath.startsWith('/parent/')) {
+          router.push('/super-admin');
+          return;
+        }
+      }
+      
     } catch (error) {
       console.error('Error parsing user data:', error);
       router.push('/login');
@@ -40,7 +68,7 @@ export default function DashboardLayout({
     }
 
     setLoading(false);
-  }, [router]);
+  }, [router, pathname]);
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -62,44 +90,44 @@ export default function DashboardLayout({
 
   const getNavigationItems = () => {
     const baseItems = [
-      { name: 'Dashboard', href: '/dashboard', current: true },
+      { name: 'Dashboard', href: '/dashboard', current: pathname === '/dashboard' },
     ];
 
     switch (user.role) {
       case 'SUPER_ADMIN':
         return [
           ...baseItems,
-          { name: 'Tenants', href: '/dashboard/super-admin/tenants', current: false },
-          { name: 'Analytics', href: '/dashboard/super-admin/analytics', current: false },
-          { name: 'Settings', href: '/dashboard/super-admin/settings', current: false },
+          { name: 'Tenants', href: '/super-admin/tenants', current: false },
+          { name: 'Analytics', href: '/super-admin/analytics', current: false },
+          { name: 'Settings', href: '/super-admin/settings', current: false },
         ];
-      case 'DAYCARE_ADMIN':
+      case 'BUSINESS_ADMIN':
         return [
           ...baseItems,
-          { name: 'Children', href: '/dashboard/admin/children', current: false },
-          { name: 'Staff', href: '/dashboard/admin/staff', current: false },
-          { name: 'Classrooms', href: '/dashboard/admin/classrooms', current: false },
-          { name: 'Billing', href: '/dashboard/admin/billing', current: false },
-          { name: 'Reports', href: '/dashboard/admin/reports', current: false },
-          { name: 'Settings', href: '/dashboard/admin/settings', current: false },
+          { name: 'Children', href: '/admin/children', current: pathname.startsWith('/admin/children') },
+          { name: 'Staff', href: '/admin/staff', current: pathname.startsWith('/admin/staff') },
+          { name: 'Pending Invitations', href: '/admin/pending-invitations', current: pathname.startsWith('/admin/pending-invitations') },
+          { name: 'Classrooms', href: '/admin/classrooms', current: pathname.startsWith('/admin/classrooms') },
+          { name: 'Billing', href: '/admin/billing', current: pathname.startsWith('/admin/billing') },
+          { name: 'Reports', href: '/admin/reports', current: pathname.startsWith('/admin/reports') },
+          { name: 'Settings', href: '/admin/settings', current: pathname.startsWith('/admin/settings') },
         ];
-      case 'TEACHER':
-      case 'STAFF':
+      case 'EDUCATOR':
         return [
           ...baseItems,
-          { name: 'My Classroom', href: '/dashboard/teacher/classroom', current: false },
-          { name: 'Attendance', href: '/dashboard/teacher/attendance', current: false },
-          { name: 'Daily Reports', href: '/dashboard/teacher/daily-reports', current: false },
-          { name: 'Schedule', href: '/dashboard/teacher/schedule', current: false },
+          { name: 'My Classroom', href: '/teacher/classroom', current: false },
+          { name: 'Attendance', href: '/teacher/attendance', current: false },
+          { name: 'Daily Reports', href: '/teacher/daily-reports', current: false },
+          { name: 'Schedule', href: '/teacher/schedule', current: false },
         ];
       case 'PARENT':
         return [
           ...baseItems,
-          { name: 'My Children', href: '/dashboard/parent/children', current: false },
-          { name: 'Payments', href: '/dashboard/parent/payments', current: false },
-          { name: 'Schedule', href: '/dashboard/parent/schedule', current: false },
-          { name: 'Messages', href: '/dashboard/parent/messages', current: false },
-          { name: 'Documents', href: '/dashboard/parent/documents', current: false },
+          { name: 'My Children', href: '/parent/children', current: false },
+          { name: 'Payments', href: '/parent/payments', current: false },
+          { name: 'Schedule', href: '/parent/schedule', current: false },
+          { name: 'Messages', href: '/parent/messages', current: false },
+          { name: 'Documents', href: '/parent/documents', current: false },
         ];
       default:
         return baseItems;

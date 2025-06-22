@@ -1,0 +1,1902 @@
+{
+    "info": {
+        "_postman_id": "daycare-management-api-v1",
+        "name": "Daycare Management System API",
+        "description": "Complete API collection for the Daycare Management SaaS Platform",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "auth": {
+        "type": "bearer",
+        "bearer": [
+            {
+                "key": "token",
+                "value": "{{accessToken}}",
+                "type": "string"
+            }
+        ]
+    },
+    "event": [
+        {
+            "listen": "prerequest",
+            "script": {
+                "type": "text/javascript",
+                "exec": [
+                    "// Set subdomain for tenant-specific requests",
+                    "if (pm.environment.get('subdomain')) {",
+                    "    pm.request.url.host = pm.environment.get('subdomain') + '.daycaremanager.com';",
+                    "}"
+                ]
+            }
+        },
+        {
+            "listen": "test",
+            "script": {
+                "type": "text/javascript",
+                "exec": [
+                    "// Auto-save tokens from login response",
+                    "if (pm.request.url.path.includes('login') && pm.response.code === 200) {",
+                    "    const response = pm.response.json();",
+                    "    pm.environment.set('accessToken', response.accessToken);",
+                    "    pm.environment.set('refreshToken', response.refreshToken);",
+                    "    pm.environment.set('userId', response.user.id);",
+                    "    pm.environment.set('tenantId', response.user.tenantId);",
+                    "}"
+                ]
+            }
+        }
+    ],
+    "variable": [
+        {
+            "key": "baseUrl",
+            "value": "https://{{subdomain}}.daycaremanager.com/api/v1",
+            "type": "string"
+        },
+        {
+            "key": "mainUrl",
+            "value": "https://www.daycaremanager.com/api/v1",
+            "type": "string"
+        }
+    ],
+    "item": [
+        {
+            "name": "Authentication",
+            "item": [
+                {
+                    "name": "Register Daycare",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test('Daycare registered successfully', function () {",
+                                    "    pm.response.to.have.status(201);",
+                                    "    const response = pm.response.json();",
+                                    "    pm.expect(response.tenant).to.have.property('id');",
+                                    "    pm.environment.set('tenantId', response.tenant.id);",
+                                    "    pm.environment.set('subdomain', response.tenant.subdomain);",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"daycareName\": \"Little Stars Academy\",\n  \"subdomain\": \"littlestars\",\n  \"adminFirstName\": \"Sarah\",\n  \"adminLastName\": \"Johnson\",\n  \"email\": \"sarah@littlestars.com\",\n  \"password\": \"SecurePass123!\",\n  \"phone\": \"+1-555-0123\",\n  \"address\": \"123 Main St, Springfield, IL 62701\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{mainUrl}}/auth/register",
+                            "host": [
+                                "{{mainUrl}}"
+                            ],
+                            "path": [
+                                "auth",
+                                "register"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Login",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test('Login successful', function () {",
+                                    "    pm.response.to.have.status(200);",
+                                    "    const response = pm.response.json();",
+                                    "    pm.expect(response).to.have.property('accessToken');",
+                                    "    pm.expect(response).to.have.property('refreshToken');",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"email\": \"sarah@littlestars.com\",\n  \"password\": \"SecurePass123!\",\n  \"subdomain\": \"littlestars\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/auth/login",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "auth",
+                                "login"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Refresh Token",
+                    "request": {
+                        "method": "POST",
+                        "header": [],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/auth/refresh",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "auth",
+                                "refresh"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Verify Email",
+                    "request": {
+                        "method": "POST",
+                        "header": [],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"token\": \"{{emailVerificationToken}}\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/auth/verify-email",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "auth",
+                                "verify-email"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Forgot Password",
+                    "request": {
+                        "method": "POST",
+                        "header": [],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"email\": \"sarah@littlestars.com\",\n  \"subdomain\": \"littlestars\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/auth/forgot-password",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "auth",
+                                "forgot-password"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Reset Password",
+                    "request": {
+                        "method": "POST",
+                        "header": [],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"token\": \"{{passwordResetToken}}\",\n  \"newPassword\": \"NewSecurePass123!\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/auth/reset-password",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "auth",
+                                "reset-password"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Logout",
+                    "request": {
+                        "method": "POST",
+                        "header": [],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/auth/logout",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "auth",
+                                "logout"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "User Management",
+            "item": [
+                {
+                    "name": "Create Staff Member",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test('Staff member created', function () {",
+                                    "    pm.response.to.have.status(201);",
+                                    "    const response = pm.response.json();",
+                                    "    pm.environment.set('teacherId', response.id);",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"email\": \"emily.teacher@littlestars.com\",\n  \"firstName\": \"Emily\",\n  \"lastName\": \"Davis\",\n  \"role\": \"TEACHER\",\n  \"phone\": \"+1-555-0124\",\n  \"classroomIds\": []\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/users/staff",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "users",
+                                "staff"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "List Users",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/users?role=TEACHER&page=1&limit=20",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "users"
+                            ],
+                            "query": [
+                                {
+                                    "key": "role",
+                                    "value": "TEACHER"
+                                },
+                                {
+                                    "key": "page",
+                                    "value": "1"
+                                },
+                                {
+                                    "key": "limit",
+                                    "value": "20"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Update User",
+                    "request": {
+                        "method": "PUT",
+                        "header": [],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"firstName\": \"Emily\",\n  \"lastName\": \"Davis-Smith\",\n  \"phone\": \"+1-555-0125\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/users/{{teacherId}}",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "users",
+                                "{{teacherId}}"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Deactivate User",
+                    "request": {
+                        "method": "DELETE",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/users/{{userId}}",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "users",
+                                "{{userId}}"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Child Management",
+            "item": [
+                {
+                    "name": "Enroll Child",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test('Child enrolled successfully', function () {",
+                                    "    pm.response.to.have.status(201);",
+                                    "    const response = pm.response.json();",
+                                    "    pm.environment.set('childId', response.child.id);",
+                                    "    pm.environment.set('parentId', response.parent.id);",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"firstName\": \"Emma\",\n  \"lastName\": \"Wilson\",\n  \"dateOfBirth\": \"2020-05-15\",\n  \"gender\": \"FEMALE\",\n  \"enrollmentDate\": \"2025-02-01\",\n  \"classroomId\": \"{{classroomId}}\",\n  \"parentEmail\": \"john.wilson@email.com\",\n  \"parentDetails\": {\n    \"firstName\": \"John\",\n    \"lastName\": \"Wilson\",\n    \"phone\": \"+1-555-0126\",\n    \"relationship\": \"FATHER\"\n  },\n  \"medicalInfo\": {\n    \"allergies\": [\"Peanuts\", \"Dairy\"],\n    \"medications\": [],\n    \"conditions\": [\"Mild asthma\"],\n    \"doctorName\": \"Dr. Smith\",\n    \"doctorPhone\": \"+1-555-0200\"\n  },\n  \"emergencyContacts\": [\n    {\n      \"name\": \"Jane Wilson\",\n      \"relationship\": \"Mother\",\n      \"phone\": \"+1-555-0127\",\n      \"canPickup\": true\n    }\n  ]\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/children",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "children"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "List Children",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/children?status=ACTIVE&classroom={{classroomId}}&page=1&limit=20",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "children"
+                            ],
+                            "query": [
+                                {
+                                    "key": "status",
+                                    "value": "ACTIVE"
+                                },
+                                {
+                                    "key": "classroom",
+                                    "value": "{{classroomId}}"
+                                },
+                                {
+                                    "key": "page",
+                                    "value": "1"
+                                },
+                                {
+                                    "key": "limit",
+                                    "value": "20"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Get Child Details",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/children/{{childId}}",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "children",
+                                "{{childId}}"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Update Child",
+                    "request": {
+                        "method": "PUT",
+                        "header": [],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"classroomId\": \"{{newClassroomId}}\",\n  \"medicalInfo\": {\n    \"allergies\": [\"Peanuts\", \"Dairy\", \"Eggs\"]\n  }\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/children/{{childId}}",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "children",
+                                "{{childId}}"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Upload Child Photo",
+                    "request": {
+                        "method": "POST",
+                        "header": [],
+                        "body": {
+                            "mode": "formdata",
+                            "formdata": [
+                                {
+                                    "key": "file",
+                                    "type": "file",
+                                    "src": "/path/to/child-photo.jpg"
+                                }
+                            ]
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/children/{{childId}}/photo",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "children",
+                                "{{childId}}",
+                                "photo"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Classroom Management",
+            "item": [
+                {
+                    "name": "Create Classroom",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test('Classroom created', function () {",
+                                    "    pm.response.to.have.status(201);",
+                                    "    const response = pm.response.json();",
+                                    "    pm.environment.set('classroomId', response.id);",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"name\": \"Butterfly Room\",\n  \"ageGroup\": \"3-4 years\",\n  \"capacity\": 15,\n  \"roomNumber\": \"101\",\n  \"description\": \"Our preschool room for 3-4 year olds\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/classrooms",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "classrooms"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "List Classrooms",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/classrooms?active=true",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "classrooms"
+                            ],
+                            "query": [
+                                {
+                                    "key": "active",
+                                    "value": "true"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Assign Teacher to Classroom",
+                    "request": {
+                        "method": "POST",
+                        "header": [],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"teacherId\": \"{{teacherId}}\",\n  \"role\": \"LEAD_TEACHER\",\n  \"startDate\": \"2025-02-01\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/classrooms/{{classroomId}}/teachers",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "classrooms",
+                                "{{classroomId}}",
+                                "teachers"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Attendance",
+            "item": [
+                {
+                    "name": "Check In Child",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test('Child checked in', function () {",
+                                    "    pm.response.to.have.status(200);",
+                                    "    const response = pm.response.json();",
+                                    "    pm.environment.set('attendanceId', response.attendanceId);",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"childId\": \"{{childId}}\",\n  \"checkInTime\": \"2025-02-15T08:30:00Z\",\n  \"checkInMethod\": \"QR_CODE\",\n  \"temperature\": 98.6,\n  \"notes\": \"Arrived happy and ready for the day\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/attendance/check-in",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "attendance",
+                                "check-in"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Check Out Child",
+                    "request": {
+                        "method": "POST",
+                        "header": [],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"attendanceId\": \"{{attendanceId}}\",\n  \"checkOutTime\": \"2025-02-15T17:15:00Z\",\n  \"authorizedPickup\": \"{{parentId}}\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/attendance/check-out",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "attendance",
+                                "check-out"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Get Daily Attendance",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/attendance/daily?date=2025-02-15&classroom={{classroomId}}",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "attendance",
+                                "daily"
+                            ],
+                            "query": [
+                                {
+                                    "key": "date",
+                                    "value": "2025-02-15"
+                                },
+                                {
+                                    "key": "classroom",
+                                    "value": "{{classroomId}}"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Generate QR Code",
+                    "request": {
+                        "method": "POST",
+                        "header": [],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"childId\": \"{{childId}}\",\n  \"validUntil\": \"2025-02-15T18:00:00Z\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/attendance/qr-code",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "attendance",
+                                "qr-code"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Daily Reports",
+            "item": [
+                {
+                    "name": "Create Daily Report",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test('Daily report created', function () {",
+                                    "    pm.response.to.have.status(201);",
+                                    "    const response = pm.response.json();",
+                                    "    pm.environment.set('reportId', response.reportId);",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"childId\": \"{{childId}}\",\n  \"date\": \"2025-02-15\",\n  \"mood\": \"HAPPY\",\n  \"meals\": [\n    {\n      \"type\": \"BREAKFAST\",\n      \"time\": \"08:45\",\n      \"foodItems\": [\"Oatmeal\", \"Banana\", \"Milk\"],\n      \"amountEaten\": \"MOST\"\n    },\n    {\n      \"type\": \"LUNCH\",\n      \"time\": \"12:00\",\n      \"foodItems\": [\"Chicken nuggets\", \"Carrots\", \"Apple juice\"],\n      \"amountEaten\": \"ALL\"\n    }\n  ],\n  \"naps\": [\n    {\n      \"startTime\": \"13:00\",\n      \"endTime\": \"14:30\",\n      \"quality\": \"GOOD\"\n    }\n  ],\n  \"activities\": [\n    \"Circle time - learned about colors\",\n    \"Outdoor play - playground\",\n    \"Art project - finger painting\"\n  ],\n  \"notes\": \"Emma had a great day! She was very engaged during circle time.\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/daily-reports",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "daily-reports"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Get Daily Report",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/daily-reports/{{reportId}}",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "daily-reports",
+                                "{{reportId}}"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Add Photo to Report",
+                    "request": {
+                        "method": "POST",
+                        "header": [],
+                        "body": {
+                            "mode": "formdata",
+                            "formdata": [
+                                {
+                                    "key": "file",
+                                    "type": "file",
+                                    "src": "/path/to/activity-photo.jpg"
+                                },
+                                {
+                                    "key": "caption",
+                                    "value": "Emma's beautiful finger painting!",
+                                    "type": "text"
+                                }
+                            ]
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/daily-reports/{{reportId}}/photos",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "daily-reports",
+                                "{{reportId}}",
+                                "photos"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Billing & Payments",
+            "item": [
+                {
+                    "name": "Create Fee Structure",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test('Fee structure created', function () {",
+                                    "    pm.response.to.have.status(201);",
+                                    "    const response = pm.response.json();",
+                                    "    pm.environment.set('feeStructureId', response.id);",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"name\": \"Full-Time Tuition\",\n  \"description\": \"Monthly tuition for full-time enrollment\",\n  \"amount\": 1200.00,\n  \"frequency\": \"MONTHLY\",\n  \"applicableFrom\": \"2025-01-01\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/billing/fee-structures",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "billing",
+                                "fee-structures"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Assign Fees to Child",
+                    "request": {
+                        "method": "POST",
+                        "header": [],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"feeStructureId\": \"{{feeStructureId}}\",\n  \"startDate\": \"2025-02-01\",\n  \"customAmount\": null,\n  \"notes\": \"Standard full-time rate\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/billing/children/{{childId}}/fees",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "billing",
+                                "children",
+                                "{{childId}}",
+                                "fees"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Generate Invoice",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test('Invoice generated', function () {",
+                                    "    pm.response.to.have.status(201);",
+                                    "    const response = pm.response.json();",
+                                    "    pm.environment.set('invoiceId', response.invoice.id);",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"childId\": \"{{childId}}\",\n  \"billingPeriod\": \"2025-02\",\n  \"dueDate\": \"2025-02-05\",\n  \"items\": [\n    {\n      \"description\": \"February Tuition\",\n      \"amount\": 1200.00\n    },\n    {\n      \"description\": \"Late pickup fee (Feb 10)\",\n      \"amount\": 25.00\n    }\n  ]\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/billing/invoices",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "billing",
+                                "invoices"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Process Payment",
+                    "request": {
+                        "method": "POST",
+                        "header": [],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"invoiceId\": \"{{invoiceId}}\",\n  \"paymentMethodId\": \"pm_1MqLiI2eZvKYlo2CKaC9n5Tn\",\n  \"amount\": 1225.00\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/billing/payments",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "billing",
+                                "payments"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Get Payment History",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/billing/children/{{childId}}/payments?year=2025&month=2",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "billing",
+                                "children",
+                                "{{childId}}",
+                                "payments"
+                            ],
+                            "query": [
+                                {
+                                    "key": "year",
+                                    "value": "2025"
+                                },
+                                {
+                                    "key": "month",
+                                    "value": "2"
+                                }
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Communications",
+            "item": [
+                {
+                    "name": "Send Message",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test('Message sent', function () {",
+                                    "    pm.response.to.have.status(201);",
+                                    "    const response = pm.response.json();",
+                                    "    pm.environment.set('messageId', response.messageId);",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"recipientIds\": [\"{{parentId}}\"],\n  \"subject\": \"Emma's Progress Update\",\n  \"content\": \"Hi Mr. Wilson, I wanted to share that Emma did wonderfully in our math activities today!\",\n  \"attachments\": []\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/messages",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "messages"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Create Announcement",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test('Announcement created', function () {",
+                                    "    pm.response.to.have.status(201);",
+                                    "    const response = pm.response.json();",
+                                    "    pm.environment.set('announcementId', response.announcementId);",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"title\": \"School Closed - Presidents Day\",\n  \"content\": \"Little Stars Academy will be closed on Monday, February 19th for Presidents Day.\",\n  \"targetAudience\": \"ALL\",\n  \"isUrgent\": false,\n  \"publishAt\": \"2025-02-12T08:00:00Z\",\n  \"expireAt\": \"2025-02-19T23:59:59Z\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/announcements",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "announcements"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Get Messages",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/messages?folder=inbox&unread=true",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "messages"
+                            ],
+                            "query": [
+                                {
+                                    "key": "folder",
+                                    "value": "inbox"
+                                },
+                                {
+                                    "key": "unread",
+                                    "value": "true"
+                                }
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Schedule Management",
+            "item": [
+                {
+                    "name": "Create Schedule",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test('Schedule created', function () {",
+                                    "    pm.response.to.have.status(201);",
+                                    "    const response = pm.response.json();",
+                                    "    pm.environment.set('scheduleId', response.scheduleId);",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"classroomId\": \"{{classroomId}}\",\n  \"date\": \"2025-02-16\",\n  \"activities\": [\n    {\n      \"name\": \"Circle Time\",\n      \"startTime\": \"09:00\",\n      \"endTime\": \"09:30\",\n      \"type\": \"LEARNING\",\n      \"description\": \"Morning welcome and calendar time\"\n    },\n    {\n      \"name\": \"Snack Time\",\n      \"startTime\": \"10:00\",\n      \"endTime\": \"10:15\",\n      \"type\": \"MEAL\"\n    },\n    {\n      \"name\": \"Nap Time\",\n      \"startTime\": \"13:00\",\n      \"endTime\": \"14:30\",\n      \"type\": \"NAP\"\n    }\n  ]\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/schedules",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "schedules"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Get Weekly Schedule",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/schedules/weekly?startDate=2025-02-12&classroomId={{classroomId}}",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "schedules",
+                                "weekly"
+                            ],
+                            "query": [
+                                {
+                                    "key": "startDate",
+                                    "value": "2025-02-12"
+                                },
+                                {
+                                    "key": "classroomId",
+                                    "value": "{{classroomId}}"
+                                }
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Waitlist",
+            "item": [
+                {
+                    "name": "Join Waitlist",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test('Added to waitlist', function () {",
+                                    "    pm.response.to.have.status(201);",
+                                    "    const response = pm.response.json();",
+                                    "    pm.environment.set('waitlistId', response.waitlistId);",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"childFirstName\": \"Lucas\",\n  \"childLastName\": \"Brown\",\n  \"childDateOfBirth\": \"2021-08-20\",\n  \"parentName\": \"Maria Brown\",\n  \"parentEmail\": \"maria.brown@email.com\",\n  \"parentPhone\": \"+1-555-0128\",\n  \"desiredStartDate\": \"2025-09-01\",\n  \"preferredClassroom\": \"Toddler Room\",\n  \"notes\": \"Looking for full-time care starting Fall 2025\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/waitlist",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "waitlist"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Check Waitlist Status",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/waitlist/{{waitlistId}}/status",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "waitlist",
+                                "{{waitlistId}}",
+                                "status"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Analytics",
+            "item": [
+                {
+                    "name": "Dashboard Statistics",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/analytics/dashboard",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "analytics",
+                                "dashboard"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Enrollment Report",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/analytics/enrollment?startDate=2025-01-01&endDate=2025-02-15",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "analytics",
+                                "enrollment"
+                            ],
+                            "query": [
+                                {
+                                    "key": "startDate",
+                                    "value": "2025-01-01"
+                                },
+                                {
+                                    "key": "endDate",
+                                    "value": "2025-02-15"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Financial Report",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/analytics/financial?year=2025&month=2",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "analytics",
+                                "financial"
+                            ],
+                            "query": [
+                                {
+                                    "key": "year",
+                                    "value": "2025"
+                                },
+                                {
+                                    "key": "month",
+                                    "value": "2"
+                                }
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Document Management",
+            "item": [
+                {
+                    "name": "Upload Document",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test('Document uploaded', function () {",
+                                    "    pm.response.to.have.status(201);",
+                                    "    const response = pm.response.json();",
+                                    "    pm.environment.set('documentId', response.documentId);",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [],
+                        "body": {
+                            "mode": "formdata",
+                            "formdata": [
+                                {
+                                    "key": "childId",
+                                    "value": "{{childId}}",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "documentType",
+                                    "value": "IMMUNIZATION",
+                                    "type": "text"
+                                },
+                                {
+                                    "key": "file",
+                                    "type": "file",
+                                    "src": "/path/to/immunization-record.pdf"
+                                },
+                                {
+                                    "key": "description",
+                                    "value": "Updated immunization record - February 2025",
+                                    "type": "text"
+                                }
+                            ]
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/documents",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "documents"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "List Child Documents",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/children/{{childId}}/documents",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "children",
+                                "{{childId}}",
+                                "documents"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Settings",
+            "item": [
+                {
+                    "name": "Get Tenant Settings",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/settings/tenant",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "settings",
+                                "tenant"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Update Tenant Settings",
+                    "request": {
+                        "method": "PUT",
+                        "header": [],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"businessHours\": {\n    \"monday\": { \"open\": \"06:30\", \"close\": \"18:30\" }\n  },\n  \"fees\": {\n    \"latePickupFee\": 30.00\n  }\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/settings/tenant",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "settings",
+                                "tenant"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Upload Logo",
+                    "request": {
+                        "method": "POST",
+                        "header": [],
+                        "body": {
+                            "mode": "formdata",
+                            "formdata": [
+                                {
+                                    "key": "file",
+                                    "type": "file",
+                                    "src": "/path/to/daycare-logo.png"
+                                }
+                            ]
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/settings/logo",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "settings",
+                                "logo"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Staff Management",
+            "item": [
+                {
+                    "name": "Create Staff Schedule",
+                    "request": {
+                        "method": "POST",
+                        "header": [],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"staffId\": \"{{teacherId}}\",\n  \"schedules\": [\n    {\n      \"date\": \"2025-02-19\",\n      \"startTime\": \"08:00\",\n      \"endTime\": \"16:30\",\n      \"breakStart\": \"12:00\",\n      \"breakEnd\": \"12:30\"\n    },\n    {\n      \"date\": \"2025-02-20\",\n      \"startTime\": \"08:00\",\n      \"endTime\": \"16:30\",\n      \"breakStart\": \"12:00\",\n      \"breakEnd\": \"12:30\"\n    }\n  ]\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/staff/schedules",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "staff",
+                                "schedules"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Get Staff Schedule",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/staff/{{teacherId}}/schedule?startDate=2025-02-19&endDate=2025-02-23",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "staff",
+                                "{{teacherId}}",
+                                "schedule"
+                            ],
+                            "query": [
+                                {
+                                    "key": "startDate",
+                                    "value": "2025-02-19"
+                                },
+                                {
+                                    "key": "endDate",
+                                    "value": "2025-02-23"
+                                }
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Clock In/Out",
+                    "request": {
+                        "method": "POST",
+                        "header": [],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"action\": \"CLOCK_IN\",\n  \"timestamp\": \"2025-02-19T07:58:00Z\",\n  \"location\": {\n    \"latitude\": 39.7392,\n    \"longitude\": -104.9903\n  }\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/staff/timeclock",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "staff",
+                                "timeclock"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Incidents & Health",
+            "item": [
+                {
+                    "name": "Report Incident",
+                    "event": [
+                        {
+                            "listen": "test",
+                            "script": {
+                                "exec": [
+                                    "pm.test('Incident reported', function () {",
+                                    "    pm.response.to.have.status(201);",
+                                    "    const response = pm.response.json();",
+                                    "    pm.environment.set('incidentId', response.incidentId);",
+                                    "});"
+                                ],
+                                "type": "text/javascript"
+                            }
+                        }
+                    ],
+                    "request": {
+                        "method": "POST",
+                        "header": [],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"childId\": \"{{childId}}\",\n  \"incidentType\": \"INJURY\",\n  \"dateTime\": \"2025-02-15T14:30:00Z\",\n  \"location\": \"Playground\",\n  \"description\": \"Emma fell from the swing and scraped her knee\",\n  \"injuryDetails\": {\n    \"bodyPart\": \"Right knee\",\n    \"injuryType\": \"Scrape\",\n    \"severity\": \"MINOR\"\n  },\n  \"actionTaken\": \"Cleaned the scrape, applied bandage, comforted child\",\n  \"witnessedBy\": [\"{{teacherId}}\"],\n  \"parentNotified\": true,\n  \"parentNotifiedAt\": \"2025-02-15T14:45:00Z\",\n  \"parentResponse\": \"Thanked for notification, no further action needed\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/incidents",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "incidents"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Health Check Record",
+                    "request": {
+                        "method": "POST",
+                        "header": [],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"childId\": \"{{childId}}\",\n  \"date\": \"2025-02-15\",\n  \"temperature\": 98.6,\n  \"symptoms\": [],\n  \"medicationGiven\": false,\n  \"notes\": \"Child appears healthy and happy\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/health-checks",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "health-checks"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Medication Administration",
+                    "request": {
+                        "method": "POST",
+                        "header": [],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"childId\": \"{{childId}}\",\n  \"medicationName\": \"Children's Tylenol\",\n  \"dosage\": \"5ml\",\n  \"administeredAt\": \"2025-02-15T11:00:00Z\",\n  \"reason\": \"Mild headache\",\n  \"administeredBy\": \"{{teacherId}}\",\n  \"parentAuthorization\": \"auth_5Fg6H...\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/medications/administer",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "medications",
+                                "administer"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Reports Generation",
+            "item": [
+                {
+                    "name": "Generate Attendance Report",
+                    "request": {
+                        "method": "POST",
+                        "header": [],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"reportType\": \"MONTHLY\",\n  \"month\": \"2025-02\",\n  \"classroomId\": \"{{classroomId}}\",\n  \"format\": \"PDF\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/reports/attendance",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "reports",
+                                "attendance"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Generate Financial Statement",
+                    "request": {
+                        "method": "POST",
+                        "header": [],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"childId\": \"{{childId}}\",\n  \"year\": 2025,\n  \"includeDetails\": true\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/reports/financial-statement",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "reports",
+                                "financial-statement"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Parent Portal",
+            "item": [
+                {
+                    "name": "Parent Dashboard",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/parent/dashboard",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "parent",
+                                "dashboard"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Request Absence",
+                    "request": {
+                        "method": "POST",
+                        "header": [],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"childId\": \"{{childId}}\",\n  \"dates\": [\"2025-02-22\", \"2025-02-23\"],\n  \"reason\": \"Family vacation\",\n  \"notes\": \"Emma will be out Friday and Monday for a family trip\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/parent/absence-request",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "parent",
+                                "absence-request"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Update Emergency Contacts",
+                    "request": {
+                        "method": "PUT",
+                        "header": [],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"contacts\": [\n    {\n      \"name\": \"Jane Wilson\",\n      \"relationship\": \"Mother\",\n      \"phone\": \"+1-555-0127\",\n      \"canPickup\": true\n    },\n    {\n      \"name\": \"Robert Wilson\",\n      \"relationship\": \"Grandfather\",\n      \"phone\": \"+1-555-0129\",\n      \"canPickup\": true\n    }\n  ]\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/parent/children/{{childId}}/emergency-contacts",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "parent",
+                                "children",
+                                "{{childId}}",
+                                "emergency-contacts"
+                            ]
+                        }
+                    }
+                }
+            ]
+        },
+        {
+            "name": "Platform Management",
+            "item": [
+                {
+                    "name": "Platform Statistics",
+                    "request": {
+                        "method": "GET",
+                        "header": [],
+                        "url": {
+                            "raw": "{{baseUrl}}/platform/statistics",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "platform",
+                                "statistics"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Manage Tenant Subscription",
+                    "request": {
+                        "method": "PUT",
+                        "header": [],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"plan\": \"PREMIUM\",\n  \"billingCycle\": \"ANNUAL\",\n  \"customPrice\": 8400.00,\n  \"notes\": \"Annual discount applied\"\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/platform/tenants/{{tenantId}}/subscription",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "platform",
+                                "tenants",
+                                "{{tenantId}}",
+                                "subscription"
+                            ]
+                        }
+                    }
+                },
+                {
+                    "name": "Export Data",
+                    "request": {
+                        "method": "POST",
+                        "header": [],
+                        "body": {
+                            "mode": "raw",
+                            "raw": "{\n  \"exportType\": \"GDPR_REQUEST\",\n  \"format\": \"JSON\",\n  \"scope\": {\n    \"children\": true,\n    \"attendance\": true,\n    \"billing\": true,\n    \"communications\": true\n  },\n  \"dateRange\": {\n    \"start\": \"2024-01-01\",\n    \"end\": \"2025-02-15\"\n  }\n}",
+                            "options": {
+                                "raw": {
+                                    "language": "json"
+                                }
+                            }
+                        },
+                        "url": {
+                            "raw": "{{baseUrl}}/export/data",
+                            "host": [
+                                "{{baseUrl}}"
+                            ],
+                            "path": [
+                                "export",
+                                "data"
+                            ]
+                        }
+                    }
+                }
+            ]
+        }
+    ]
+}

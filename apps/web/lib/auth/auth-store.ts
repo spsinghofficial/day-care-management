@@ -6,7 +6,7 @@ interface User {
   email: string;
   firstName: string;
   lastName: string;
-  role: 'SUPER_ADMIN' | 'DAYCARE_ADMIN' | 'TEACHER' | 'STAFF' | 'PARENT';
+  role: 'SUPER_ADMIN' | 'BUSINESS_ADMIN' | 'EDUCATOR' | 'PARENT';
   tenantId?: string;
 }
 

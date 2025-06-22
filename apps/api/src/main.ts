@@ -7,9 +7,24 @@ async function bootstrap() {
   
   // Enable CORS for frontend communication
   app.enableCors({
-    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
-    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like mobile apps or curl requests)
+      if (!origin) return callback(null, true);
+      
+      // Allow localhost:3000 and any subdomain
+      if (
+        origin === 'http://localhost:3000' ||
+        origin.match(/^http:\/\/.*\.localhost:3000$/)
+      ) {
+        return callback(null, true);
+      }
+      
+      // Reject other origins
+      return callback(new Error('Not allowed by CORS'));
+    },
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     credentials: true,
+    optionsSuccessStatus: 200, // Some legacy browsers choke on 204
   });
 
   // Global validation pipe

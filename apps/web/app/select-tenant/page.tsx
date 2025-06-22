@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { validateSubdomain } from '../../lib/utils/tenant-client';
+import { validateSubdomain, buildTenantUrlFromCurrent } from '../../lib/utils/tenant-client';
 
 export default function SelectTenantPage() {
   const router = useRouter();
@@ -35,9 +35,11 @@ export default function SelectTenantPage() {
         return;
       }
 
-      // Redirect to the tenant-specific URL
-      const baseUrl = window.location.origin;
-      const tenantUrl = `${window.location.protocol}//${subdomain}.${window.location.host}`;
+      // Redirect to the tenant-specific URL using utility function
+      const tenantUrl = buildTenantUrlFromCurrent(subdomain, '/dashboard');
+      
+      console.log('Current host:', window.location.host);
+      console.log('Target URL:', tenantUrl);
       
       window.location.href = tenantUrl;
     } catch (error) {

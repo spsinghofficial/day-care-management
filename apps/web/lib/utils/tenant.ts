@@ -13,7 +13,12 @@ export function extractSubdomain(host: string): string | null {
   // Split by dots
   const parts = hostname.split('.');
   
-  // If localhost or IP, return null
+  // Handle localhost with subdomain (e.g., tenant.localhost)
+  if (parts.length >= 2 && parts[parts.length - 1] === 'localhost') {
+    return parts[0] || null;
+  }
+  
+  // If plain localhost or IP, return null
   if (hostname === 'localhost' || /^\d+\.\d+\.\d+\.\d+$/.test(hostname)) {
     return null;
   }
