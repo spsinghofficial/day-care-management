@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
 
     // Forward the request to the backend API
     const apiBaseUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8080/api';
-    const response = await fetch(`${apiBaseUrl}/auth/invited-users`, {
+    const response = await fetch(`${apiBaseUrl}/auth/staff-members`, {
       method: 'GET',
       headers: {
         'Authorization': authHeader,
@@ -35,6 +35,9 @@ export async function GET(request: NextRequest) {
             emailVerified: true,
             lastLoginAt: '2025-01-15T10:30:00Z',
             createdAt: '2025-01-01T00:00:00Z',
+            isInvited: false,
+            invitedAt: null,
+            invitationExpiresAt: null,
           },
           {
             id: '2',
@@ -46,6 +49,23 @@ export async function GET(request: NextRequest) {
             emailVerified: true,
             lastLoginAt: '2025-01-15T14:20:00Z',
             createdAt: '2025-01-01T00:00:00Z',
+            isInvited: false,
+            invitedAt: null,
+            invitationExpiresAt: null,
+          },
+          {
+            id: '3',
+            email: 'jane.pending@littlestars.com',
+            firstName: 'Jane',
+            lastName: 'Smith',
+            role: 'EDUCATOR',
+            isActive: false,
+            emailVerified: false,
+            lastLoginAt: null,
+            createdAt: '2025-01-20T00:00:00Z',
+            isInvited: true,
+            invitedAt: '2025-01-20T00:00:00Z',
+            invitationExpiresAt: '2025-01-23T00:00:00Z',
           },
         ];
         return NextResponse.json(mockStaff);
@@ -73,6 +93,9 @@ export async function GET(request: NextRequest) {
         emailVerified: true,
         lastLoginAt: '2025-01-15T10:30:00Z',
         createdAt: '2025-01-01T00:00:00Z',
+        isInvited: false,
+        invitedAt: null,
+        invitationExpiresAt: null,
       },
       {
         id: '2',
@@ -84,6 +107,23 @@ export async function GET(request: NextRequest) {
         emailVerified: true,
         lastLoginAt: '2025-01-15T14:20:00Z',
         createdAt: '2025-01-01T00:00:00Z',
+        isInvited: false,
+        invitedAt: null,
+        invitationExpiresAt: null,
+      },
+      {
+        id: '3',
+        email: 'jane.pending@littlestars.com',
+        firstName: 'Jane',
+        lastName: 'Smith',
+        role: 'EDUCATOR',
+        isActive: false,
+        emailVerified: false,
+        lastLoginAt: null,
+        createdAt: '2025-01-20T00:00:00Z',
+        isInvited: true,
+        invitedAt: '2025-01-20T00:00:00Z',
+        invitationExpiresAt: '2025-01-23T00:00:00Z',
       },
     ];
     return NextResponse.json(mockStaff);

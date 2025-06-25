@@ -242,12 +242,12 @@ async function main() {
     },
   });
 
-  await prisma.parentChildRelation.create({
+  await prisma.parentChildRelationship.create({
     data: {
       parentId: demoParent.id,
       childId: sampleChild.id,
-      relationshipType: 'FATHER',
-      isPrimaryContact: true,
+      relationship: 'FATHER',
+      isPrimary: true,
     },
   });
 

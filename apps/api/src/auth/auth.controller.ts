@@ -1,10 +1,12 @@
 import { Controller, Post, Body, ValidationPipe, Get, UseGuards, Request, Query, Param, Delete } from '@nestjs/common';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth, ApiBody, ApiQuery, ApiParam } from '@nestjs/swagger';
 import { AuthService, LoginDto, RegisterDto } from './auth.service';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { TenantService } from './tenant.service';
 import { TenantRegistrationDto } from './tenant-registration.dto';
 import { InviteStaffDto, AcceptInvitationDto, ResendInvitationDto } from './staff-invitation.dto';
 
+@ApiTags('auth')
 @Controller('auth')
 export class AuthController {
   constructor(
@@ -12,6 +14,9 @@ export class AuthController {
     private tenantService: TenantService,
   ) {}
 
+  @ApiOperation({ summary: 'User login', description: 'Authenticate user with email and password' })
+  @ApiResponse({ status: 200, description: 'Login successful' })
+  @ApiResponse({ status: 401, description: 'Invalid credentials' })
   @Post('login')
   async login(@Body(ValidationPipe) loginDto: LoginDto) {
     return this.authService.login(loginDto);
@@ -102,6 +107,12 @@ export class AuthController {
   @Get('invited-users')
   async getInvitedUsers(@Request() req) {
     return this.authService.getInvitedUsers(req.user.tenantId);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('staff-members')
+  async getAllStaffMembers(@Request() req) {
+    return this.authService.getAllStaffMembers(req.user.tenantId);
   }
 
   @UseGuards(JwtAuthGuard)

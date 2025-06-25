@@ -495,6 +495,38 @@ export class AuthService {
     return invitedUsers;
   }
 
+  async getAllStaffMembers(tenantId: string) {
+    const allStaff = await this.prisma.user.findMany({
+      where: {
+        tenantId,
+        role: {
+          in: [UserRole.BUSINESS_ADMIN, UserRole.EDUCATOR],
+        },
+      },
+      select: {
+        id: true,
+        email: true,
+        firstName: true,
+        lastName: true,
+        phone: true,
+        role: true,
+        isActive: true,
+        emailVerified: true,
+        lastLoginAt: true,
+        createdAt: true,
+        isInvited: true,
+        invitedAt: true,
+        invitationExpiresAt: true,
+      },
+      orderBy: [
+        { emailVerified: 'desc' }, // Active users first
+        { createdAt: 'desc' },
+      ],
+    });
+
+    return allStaff;
+  }
+
   async cancelInvitation(userId: string, canceledBy: string) {
     // Validate that the person canceling has permission
     const canceler = await this.prisma.user.findUnique({

@@ -50,7 +50,7 @@ This is a daycare management system built as a Turborepo monorepo with TypeScrip
 
 ### Daycare Admin (Business Owner)
 - Register and manage daycare center
-- Manage staff accounts
+- Manage staff accounts111111
 - View business analytics
 - Configure center settings
 - Handle billing/payments

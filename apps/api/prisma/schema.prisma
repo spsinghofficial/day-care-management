@@ -86,7 +86,7 @@ model User {
 
   // Relations
   tenant                     Tenant?                      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  parentRelations            ParentChildRelation[]
+  parentChildRelationships   ParentChildRelationship[]
   assignedServices           ServiceAssignment[]
   notifications              Notification[]
   documents                  Document[]                   @relation("DocumentReviewer")
@@ -94,6 +94,7 @@ model User {
   RefreshToken               RefreshToken[]
   TeacherClassroomAssignment TeacherClassroomAssignment[]
   AttendanceRecord           AttendanceRecord[]
+  uploadedPhotos             Photo[]
 
   @@map("users")
 }
@@ -106,51 +107,67 @@ enum UserRole {
 }
 
 model Child {
-  id          String   @id @default(cuid())
-  firstName   String
-  lastName    String
-  dateOfBirth DateTime
-  tenantId    String
-  notes       String?
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id             String       @id @default(cuid())
+  firstName      String
+  lastName       String
+  dateOfBirth    DateTime
+  gender         String?
+  tenantId       String
+  notes          String?
+  profilePhoto   String?
+  status         ChildStatus  @default(ACTIVE)
+  enrollmentDate DateTime?
+  withdrawalDate DateTime?
+  deletedAt      DateTime?
+  isActive       Boolean      @default(true)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
 
   // Relations
-  tenant              Tenant                @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  parentRelations     ParentChildRelation[]
-  serviceEnrollments  ServiceEnrollment[]
-  documents           Document[]
-  waitlistEntries     WaitlistEntry[]
-  EmergencyContact    EmergencyContact[]
-  MedicalInformation  MedicalInformation?
-  ImmunizationRecord  ImmunizationRecord[]
-  ClassroomAssignment ClassroomAssignment[]
+  tenant                     Tenant                       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  parentChildRelationships   ParentChildRelationship[]
+  serviceEnrollments         ServiceEnrollment[]
+  documents                  Document[]
+  waitlistEntries            WaitlistEntry[]
+  emergencyContacts          EmergencyContact[]
+  medicalInformation         MedicalInformation?
+  immunizationRecords        ImmunizationRecord[]
+  classroomAssignments       ClassroomAssignment[]
+  photos                     Photo[]
 
   @@map("children")
 }
 
-model ParentChildRelation {
-  id               String           @id @default(cuid())
-  parentId         String
-  childId          String
-  relationshipType RelationshipType
-  isPrimaryContact Boolean          @default(false)
-  createdAt        DateTime         @default(now())
+enum ChildStatus {
+  ACTIVE
+  INACTIVE
+  WAITLIST
+  WITHDRAWN
+}
+
+model ParentChildRelationship {
+  id                 String           @id @default(cuid())
+  parentId           String
+  childId            String
+  relationship       RelationshipType
+  isPrimary          Boolean          @default(false)
+  isEmergencyContact Boolean          @default(true)
+  canPickup          Boolean          @default(true)
+  createdAt          DateTime         @default(now())
 
   // Relations
   parent User  @relation(fields: [parentId], references: [id], onDelete: Cascade)
   child  Child @relation(fields: [childId], references: [id], onDelete: Cascade)
 
   @@unique([parentId, childId])
-  @@map("parent_child_relations")
+  @@map("parent_child_relationships")
 }
 
 enum RelationshipType {
   FATHER
   MOTHER
   GUARDIAN
-  EMERGENCY_CONTACT
+  OTHER
 }
 
 model Service {
@@ -343,14 +360,16 @@ model RefreshToken {
 }
 
 model EmergencyContact {
-  id               String   @id @default(cuid())
-  childId          String
-  firstName        String
-  lastName         String
-  phone            String
-  relationshipType String // e.g., Grandparent, Aunt, Uncle
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  id                 String   @id @default(cuid())
+  childId            String
+  name               String
+  relationship       String
+  phone              String
+  email              String?
+  isAuthorizedPickup Boolean  @default(false)
+  notes              String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
 
   child Child @relation(fields: [childId], references: [id], onDelete: Cascade)
 
@@ -358,15 +377,20 @@ model EmergencyContact {
 }
 
 model MedicalInformation {
-  id             String   @id @default(cuid())
-  childId        String   @unique
-  allergies      String? // Could be a JSON or structured text
-  medications    String? // Could be a JSON or structured text
-  conditions     String? // Could be a JSON or structured text
-  physicianName  String?
-  physicianPhone String?
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  id                      String   @id @default(cuid())
+  childId                 String   @unique
+  bloodType               String?
+  allergies               String? // JSON string array
+  medications             String? // JSON string array
+  medicalConditions       String? // JSON string array
+  doctorName              String?
+  doctorPhone             String?
+  hospitalPreference      String?
+  insuranceProvider       String?
+  insurancePolicyNumber   String?
+  additionalNotes         String?
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
 
   child Child @relation(fields: [childId], references: [id], onDelete: Cascade)
 
@@ -388,14 +412,16 @@ model ImmunizationRecord {
 }
 
 model Classroom {
-  id           String   @id @default(cuid())
-  name         String
-  tenantId     String
-  capacity     Int
-  minAgeMonths Int?
-  maxAgeMonths Int?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id                String   @id @default(cuid())
+  name              String
+  ageGroup          String?
+  tenantId          String
+  capacity          Int
+  currentEnrollment Int      @default(0)
+  minAgeMonths      Int?
+  maxAgeMonths      Int?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 
   tenant    Tenant                       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   children  ClassroomAssignment[]
@@ -409,6 +435,9 @@ model ClassroomAssignment {
   id          String   @id @default(cuid())
   childId     String
   classroomId String
+  startDate   DateTime @default(now())
+  endDate     DateTime?
+  isActive    Boolean  @default(true)
   assignedAt  DateTime @default(now())
 
   child     Child     @relation(fields: [childId], references: [id], onDelete: Cascade)
@@ -480,4 +509,24 @@ model Activity {
   schedule Schedule @relation(fields: [scheduleId], references: [id], onDelete: Cascade)
 
   @@map("activities")
+}
+
+model Photo {
+  id                   String   @id @default(cuid())
+  childId              String
+  classroomId          String?
+  tenantId             String
+  uploadedBy           String
+  photoUrl             String
+  thumbnailUrl         String?
+  caption              String?
+  isProfilePhoto       Boolean  @default(false)
+  isSharedWithParents  Boolean  @default(true)
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  child           Child @relation(fields: [childId], references: [id], onDelete: Cascade)
+  uploadedByUser  User  @relation(fields: [uploadedBy], references: [id])
+
+  @@map("photos")
 }
